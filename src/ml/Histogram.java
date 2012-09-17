@@ -1,37 +1,42 @@
 package ml;
 
-import java.util.ListIterator;
-import java.util.LinkedList;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.commons.collections.iterators.ArrayListIterator;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * TODO Add items to object and it groups them according to frequency into Bins
+ * TODO Add items to Histogram and it groups them into Bins to keep track of frequency and probability
  *
  * @author paul.
  */
 
 public class Histogram {
 
-	private Bin[] _bins;
-	private double _min, _max, _increment;
+	private static final int MAX_PRINT = 100;
+	private TreeMap<Double, Bin> _bins;
 	private int _numBins, _num;
+	private double _min, _max;
 	private Bin _minOverflow, _maxOverflow;
 	private String _histName;
 	
 	public Histogram(int n, double min, double max) {
-		set_num(0);
+		_num = 0;
 		set_min(min);
 		set_max(max);
 		_histName = null;
 		_numBins = n;
-		_increment = (_max - _min) / _numBins;
 		_minOverflow = new Bin(Double.NEGATIVE_INFINITY, _min);
 		_maxOverflow = new Bin(_max, Double.POSITIVE_INFINITY);
-		_bins = new Bin[n];
+		_bins = new TreeMap<Double, Bin>();
 		for ( int i = 0; i < n; i++ ) {
-			_bins[i] = new Bin(_min + i / (_max - _min), _max);
+			System.out.println("Bin " + i + " covering [" + ((_min*(_numBins-i) + i*_max) / _numBins) + ", " + ((_min*(_numBins-i-1) + (i+1)*_max) / _numBins) + ")");  
+			_bins.put((_min*(_numBins-i) + i*_max) / _numBins, new Bin((_min*(_numBins-i) + i*_max) / _numBins, (_min*(_numBins-i-1) + (i+1)*_max) / _numBins));
+//			_bins[i] = new Bin(_min + i / (_max - _min), _max);
 		}
 	}
 	
@@ -41,9 +46,11 @@ public class Histogram {
 		} else if ( x >= _max ) {
 			_maxOverflow.add(x);
 		} else {
-			Bin b = _bins[(int) Math.floor((x - _min) / _increment)];
+//			Bin b = _bins.get(Double.toString(_min + _increment * Math.floor(x-_min)));   //_bins[(int) Math.floor((x - _min) / _increment)];
+			Bin b = _bins.get( _bins.floorKey(Math.floor((x - _min) *_numBins / (_max - _min)) / _max ) );
 			b.add(x);
 		}
+		_num++;
 	}
 
 	public int freq(double x) {
@@ -52,7 +59,7 @@ public class Histogram {
 		} else if ( x >= _max ) {
 			return _maxOverflow.freq();
 		} else {
-			return _bins[(int) Math.floor((x - _min) / _increment)].freq();
+			return _bins.get( _bins.floorKey( _bins.floorKey(Math.floor((x - _min) *_numBins / (_max - _min)) / _max ) ) ).freq();
 		}
 	}
 	
@@ -60,9 +67,18 @@ public class Histogram {
 		return (double) freq(x) / (double) get_num();
 	}
 	
+	public double probability(String name) {
+		for ( Map.Entry<Double,Bin> entry: _bins.entrySet() ) {
+			if ( entry.getValue().get_name() == name ) {
+				return entry.getValue().freq() / (double) get_num();
+			}
+		}
+		return 0;
+	}
+	
 	public double cumulative(double x) {
 		double c = 0, max = Double.NEGATIVE_INFINITY;
-		if ( x < _bins[0].get_min() ) {
+		if ( x < _bins.get(Double.toString(_min)).get_min() ) {
 			return this.probability(x);
 		} else if ( x > _maxOverflow.get_min() ) {
 			return _maxOverflow.avg();
@@ -77,22 +93,25 @@ public class Histogram {
 		return c;
 	}
 	
-	public void setBinNames(LinkedList<Character> lettersExcludeOne) throws Exception {
-		ListIterator<Character> it = lettersExcludeOne.listIterator();
-		if ( lettersExcludeOne.size() == _bins.length ) {
-			while ( it.hasNext() ) {
-				
+	public void setBinNames(Set<String> names) throws Exception {
+		String nextName;
+		Iterator<String> name_it = names.iterator();
+		Iterator<Entry<Double, Bin>> bin_it = _bins.entrySet().iterator();
+		if ( names.size() == _bins.size() ) {
+			while ( name_it.hasNext() && bin_it.hasNext() ) {
+				nextName = name_it.next();
+				bin_it.next().getValue().set_name(nextName);
 			}
 		} else {
-			throw new Exception("attempting to assign a list of " + lettersExcludeOne.size() + " strings to names of " + _bins.length + " bins.");
+			throw new Exception("attempting to assign a list of " + names.size() + " strings to names of " + _bins.size() + " bins.");
 		}
 	}
 	
 	public int maxCount() {
 		int maxC = 0;
-		for ( Bin b: _bins ) {
-			if (b.freq() > maxC) {
-				maxC = b.freq();
+		for ( Map.Entry<Double, Bin> b: _bins.entrySet() ) {   //Bin b: _bins ) {
+			if (b.getValue().freq() > maxC) {
+				maxC = b.getValue().freq();
 			}
 		}
 		return maxC;
@@ -100,17 +119,17 @@ public class Histogram {
 
 	public void printHist(boolean includeOverflow, boolean includeBinNames) {
 		double maxC = this.maxCount();
-		String str = "|";
+		String repStr = "|";
 		String printStr = "";
 		if ( includeOverflow ) {
 			 printStr = includeBinNames ? _minOverflow.get_name() + " " : "";
-			 printStr += StringUtils.repeat( str, (int) (200*(_minOverflow.freq() / maxC)) );
+			 printStr += StringUtils.repeat( repStr, (int) (MAX_PRINT*(_minOverflow.freq() / this.get_num())) );
 		}
-		for ( Bin b: _bins ) {
-			printStr += StringUtils.repeat( str, (int) (200*(b.freq() / maxC)) ) + "\n";
+		for ( Map.Entry<Double, Bin> b: _bins.entrySet() ) {
+			printStr += (includeBinNames ? b.getValue().get_name() : "" ) + StringUtils.repeat( repStr, (int) (MAX_PRINT*(b.getValue().freq() / maxC)) ) + "\n";
 		}
 		if ( includeOverflow ) {
-			printStr += StringUtils.repeat( str, (int) (200*(_maxOverflow.freq() / maxC)) ) + "\n\n";
+			printStr += StringUtils.repeat( repStr, (int) (MAX_PRINT*(_maxOverflow.freq() / maxC)) ) + "\n\n";
 		}
 		
 		System.out.print(printStr);
@@ -140,11 +159,7 @@ public class Histogram {
 		return _histName;
 	}
 	
-	private void set_num(int num) {
-		_num = num;
-	}
-
-	private double get_num() {
+	private int get_num() {
 		return _num;
 	}
 }

@@ -23,7 +23,7 @@ public class FileProcessor {
 		_inputs = new LinkedList<NameItem>();
 		_path = path;
 		try {
-		 	BufferedReader br = new BufferedReader(new FileReader(this._path));
+		 	BufferedReader br = new BufferedReader(new FileReader(_path));
 			this.process(br);
 		} catch (IOException e) {
 			e.printStackTrace();

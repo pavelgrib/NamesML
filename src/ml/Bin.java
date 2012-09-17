@@ -15,6 +15,7 @@ public class Bin {
 	
 	public Bin(double min, double max) {
 		_ss = new SimpleStats();
+		set_name(String.valueOf(min));
 		set_min(min);
 		set_max(max);
 	}
