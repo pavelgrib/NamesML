@@ -19,13 +19,13 @@ public class Histogram {
 
 	private static final int MAX_PRINT = 100;
 	private TreeMap<Double, Bin> _bins;
-	private int _numBins, _num;
+	private int _numBins, _count;
 	private double _min, _max;
 	private Bin _minOverflow, _maxOverflow;
 	private String _histName;
 	
 	public Histogram(int n, double min, double max) {
-		_num = 0;
+		_count = 0;
 		set_min(min);
 		set_max(max);
 		_histName = null;
@@ -34,9 +34,8 @@ public class Histogram {
 		_maxOverflow = new Bin(_max, Double.POSITIVE_INFINITY);
 		_bins = new TreeMap<Double, Bin>();
 		for ( int i = 0; i < n; i++ ) {
-			System.out.println("Bin " + i + " covering [" + ((_min*(_numBins-i) + i*_max) / _numBins) + ", " + ((_min*(_numBins-i-1) + (i+1)*_max) / _numBins) + ")");  
+//			System.out.println("Bin " + i + " covering [" + ((_min*(_numBins-i) + i*_max) / _numBins) + ", " + ((_min*(_numBins-i-1) + (i+1)*_max) / _numBins) + ")");  
 			_bins.put((_min*(_numBins-i) + i*_max) / _numBins, new Bin((_min*(_numBins-i) + i*_max) / _numBins, (_min*(_numBins-i-1) + (i+1)*_max) / _numBins));
-//			_bins[i] = new Bin(_min + i / (_max - _min), _max);
 		}
 	}
 	
@@ -47,12 +46,18 @@ public class Histogram {
 			_maxOverflow.add(x);
 		} else {
 //			Bin b = _bins.get(Double.toString(_min + _increment * Math.floor(x-_min)));   //_bins[(int) Math.floor((x - _min) / _increment)];
-			Bin b = _bins.get( _bins.floorKey(Math.floor((x - _min) *_numBins / (_max - _min)) / _max ) );
+			Bin b = _bins.get( _numBins * (x - _min) / (_max - _min) );
 			b.add(x);
 		}
-		_num++;
+		_count++;
 	}
 
+	public void add(double x, int n) {
+		for ( int i = 0; i < n; i++ ) {
+			this.add(x);
+		}
+	}
+	
 	public int freq(double x) {
 		if ( x < _min ) {
 			return _minOverflow.freq();
@@ -64,13 +69,13 @@ public class Histogram {
 	}
 	
 	public double probability(double x) {
-		return (double) freq(x) / (double) get_num();
+		return (double) freq(x) / (double) get_count();
 	}
 	
 	public double probability(String name) {
 		for ( Map.Entry<Double,Bin> entry: _bins.entrySet() ) {
 			if ( entry.getValue().get_name() == name ) {
-				return entry.getValue().freq() / (double) get_num();
+				return entry.getValue().freq() / (double) get_count();
 			}
 		}
 		return 0;
@@ -123,7 +128,7 @@ public class Histogram {
 		String printStr = "";
 		if ( includeOverflow ) {
 			 printStr = includeBinNames ? _minOverflow.get_name() + " " : "";
-			 printStr += StringUtils.repeat( repStr, (int) (MAX_PRINT*(_minOverflow.freq() / this.get_num())) );
+			 printStr += StringUtils.repeat( repStr, (int) (MAX_PRINT*(_minOverflow.freq() / this.get_count())) );
 		}
 		for ( Map.Entry<Double, Bin> b: _bins.entrySet() ) {
 			printStr += (includeBinNames ? b.getValue().get_name() : "" ) + StringUtils.repeat( repStr, (int) (MAX_PRINT*(b.getValue().freq() / maxC)) ) + "\n";
@@ -134,6 +139,30 @@ public class Histogram {
 		
 		System.out.print(printStr);
 	}
+	
+	public Iterator<Entry<Double, Bin>> binEntryIterator() {
+		return this._bins.entrySet().iterator();
+	}
+	
+	public static Histogram combineHistograms(Histogram h1, Histogram h2) {
+		Iterator<Entry<Double, Bin>> bins1 = h1.binEntryIterator();
+		Iterator<Entry<Double, Bin>> bins2 = h2.binEntryIterator();
+		if ( h1.compareBins(h2) ) {
+			Histogram combined = new Histogram( h1.get_numbins(), h1.get_min(), h1.get_max() );
+			Bin b1, b2;
+			while ( bins1.hasNext() && bins2.hasNext() ) {
+				b1 = bins1.next().getValue();
+				b2 = bins2.next().getValue();
+				combined.add(b1.avg(), b1.freq());
+				combined.add(b2.avg(), b2.freq());
+			}
+			// TODO need to include min and max overflows to new histogram
+			return combined;
+		} else {
+			return null;
+		}
+	}
+
 	
 	public double get_max() {
 		return _max;
@@ -159,7 +188,19 @@ public class Histogram {
 		return _histName;
 	}
 	
-	private int get_num() {
-		return _num;
+	private int get_count() {
+		return _count;
+	}
+	
+	public int get_numbins() {
+		return _numBins;
+	}
+	
+	public boolean compareBins(Histogram h) {
+		boolean output = false;
+		if ( get_numbins()==h.get_numbins() || get_max()==h.get_max() || get_min()==h.get_min() ) {
+			output = true;
+		}
+		return output;
 	}
 }

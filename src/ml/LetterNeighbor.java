@@ -13,7 +13,9 @@ import def.*;
 public class LetterNeighbor {
 
 	public static final int NCHARS = 26;
+	private String _gender;
 	private Histogram _lettersPrior;
+	private Histogram _twoLettersPrior;
 	private Histogram[] _histOne;
 	private Histogram[] _histTwo;
 	private TreeMap<String,Integer> _letters;
@@ -22,8 +24,12 @@ public class LetterNeighbor {
 	public LetterNeighbor(String filepath) throws Exception {
 		mapLetters();
 		mapTwoLetterSequences();
+		set_gender("NONE");
 		FileProcessor fp = new FileProcessor(filepath, 1);
-		_lettersPrior = new Histogram(NCHARS, 0, NCHARS);
+		_lettersPrior = new Histogram( NCHARS, 0, NCHARS );
+		_lettersPrior.setBinNames( _letters.keySet() );
+		_twoLettersPrior = new Histogram( NCHARS*NCHARS, 0, NCHARS*NCHARS );
+		_twoLettersPrior.setBinNames( _twoLetterSequences.keySet() );
 		_histOne = new Histogram[NCHARS];
 		_histTwo = new Histogram[NCHARS*NCHARS];
 		char[] c2 = new char[2];
@@ -43,7 +49,7 @@ public class LetterNeighbor {
 		}
 		this.analyze(fp);
 	}
-		
+	
 	private void analyze(FileProcessor fp) {
 		Iterator<NameItem> it = fp.nameItemIterator();
 		char[] charArray;
@@ -55,30 +61,54 @@ public class LetterNeighbor {
 				_lettersPrior.add(_letters.get(String.valueOf(charArray[i]).toLowerCase()));	// adding to prior to calculate prior letter probabilities
 				idx = _letters.get(String.valueOf(charArray[i]).toLowerCase());
 				idxnext  = _letters.get(String.valueOf(charArray[i+1]).toLowerCase());
-				_histOne[idx].add(idxnext);												// adding to 1-letter conditional probabilities
+				_histOne[idx].add(idxnext);														// adding to 1-letter conditional probabilities
 				
 				if ( i < charArray.length-2 ) {
 					twoLetterArray[0] = charArray[i];
 					twoLetterArray[1] = charArray[i+1];
-					idx2 = _twoLetterSequences.get(String.valueOf(twoLetterArray).toLowerCase());
-					idxnext2 = _letters.get(String.valueOf(charArray[i+2]).toLowerCase());
-					_histTwo[idx2].add(idxnext2);										// adding to 2-letter conditional probabilities
+					_twoLettersPrior.add( _twoLetterSequences.get( String.valueOf(twoLetterArray).toLowerCase() ) );
+					idx2 = _twoLetterSequences.get( String.valueOf(twoLetterArray).toLowerCase() );
+					idxnext2 = _letters.get( String.valueOf(charArray[i+2]).toLowerCase() );
+					_histTwo[idx2].add( idxnext2 );												// adding to 2-letter conditional probabilities
 				}
-				
-			}
-			
-			for ( int i = 0; i < charArray.length - 2; i++ ) {
 				
 			}
 		}
 
-//		for ( Histogram h: _hist ) {
+//		for ( Histogram h: _histOne ) {
+//			System.out.println(h.get_histname());
+//			h.printHist(false, true);
+//			System.out.print("\n\n");
+//		}
+
+//		_twoLettersPrior.printHist(false, true);
+//		for ( Histogram h: _histTwo ) {
 //			System.out.println(h.get_histname());
 //			h.printHist(false, true);
 //			System.out.print("\n\n");
 //		}
 	}
 	
+	public double priorProbability(String event) {
+		if ( event.length() == 1 ) {
+			return _lettersPrior.probability(event);
+		} else if ( event.length() == 2 ) {
+			return _twoLettersPrior.probability(event);
+		} else {
+			return 0;
+		}
+	}
+	
+	public double conditionalProbability(String event, String conditionalOn) {
+		if ( conditionalOn.length() == 1 ) {
+			return _histOne[_letters.get(String.valueOf(conditionalOn).toLowerCase())].probability(event);
+		} else if ( conditionalOn.length() == 2 ) {
+			return _histTwo[_twoLetterSequences.get(String.valueOf(conditionalOn).toLowerCase())].probability(event);
+		} else {
+			return 0;
+		}
+	}
+
 	private void mapLetters() {
 		_letters = new TreeMap<String, Integer>();
 		for ( char c = 'a'; c < ('a' + NCHARS); c++ ) {
@@ -97,5 +127,12 @@ public class LetterNeighbor {
 			}
 		}
 	}
+	
+	public void set_gender(String gender) {
+		_gender = gender;
+	}
+	
+	public String get_gender() {
+		return _gender;
+	}
 }
-

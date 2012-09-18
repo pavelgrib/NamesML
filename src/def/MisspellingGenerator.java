@@ -14,20 +14,27 @@ public class MisspellingGenerator {
 	private Random _generator;
 	private FileProcessor _fp;
 	
-	public MisspellingGenerator(String filepath) {
+	public MisspellingGenerator(String filepath, int ncol) {
 		_generator = new Random();
-		_fp = new FileProcessor(filepath, 1);
+		_fp = new FileProcessor(filepath, ncol);
 	}
 	
 	public void generateMisspelledFile(String filepath) {
 		try {
 			BufferedWriter bw = new BufferedWriter(new FileWriter(filepath));
 			Iterator<NameItem> ni_it = _fp.nameItemIterator();
-			String next;
+			String nextName, nextPostcode, nextGender, nextDOB;
 			while ( ni_it.hasNext() ) {
-				next = ni_it.next().get_name();
-				next = generateMisspelledName(next);
-				bw.write(next + "\n");
+				nextName = ni_it.next().get_name();
+				nextName = generateMisspelledName(nextName);
+				if ( _fp.get_ncol() == 1 ) {
+					bw.write(nextName + "\n");
+				} else {
+					nextPostcode = randomPostcode();
+					nextGender = randomGender();
+					nextDOB = randomDOB();
+					bw.write("\"" + nextName + "\"\t" + nextGender + "\"\t" + nextPostcode + "\"\t" + nextDOB + "\n");
+				}
 			}
 			bw.flush();
 			bw.close();
@@ -49,18 +56,18 @@ public class MisspellingGenerator {
 		return misspelledList;
 	}
 	
-	private String generateMisspelledName(String next) {
+	private String generateMisspelledName(String fromName) {
 		if ( _generator.nextBoolean() ) {
 			int misspelling = _generator.nextInt(NUM_MISSPELLINGS);
 			switch ( misspelling ) {
-				case 0: next = transposeNeighborLetters(next, _generator.nextInt(next.length() - 2)); break;
-				case 1: next = insertSymbol(next, SYMBOLS[_generator.nextInt(SYMBOLS.length-1)], _generator.nextInt(next.length() - 2)); break;
-				case 2: next = omitLetter(next, _generator.nextInt(next.length() - 2)); break;
-				case 3: next = repeatLetter(next, _generator.nextInt(next.length() - 2)); break;
-				case 4: next = takeOutRepeatingLetter(next); break;
+				case 0: fromName = transposeNeighborLetters(fromName, _generator.nextInt(fromName.length() - 2)); break;
+				case 1: fromName = insertSymbol(fromName, SYMBOLS[_generator.nextInt(SYMBOLS.length-1)], _generator.nextInt(fromName.length() - 2)); break;
+				case 2: fromName = omitLetter(fromName, _generator.nextInt(fromName.length() - 2)); break;
+				case 3: fromName = repeatLetter(fromName, _generator.nextInt(fromName.length() - 2)); break;
+				case 4: fromName = takeOutRepeatingLetter(fromName); break;
 			}
 		}
-		return next;
+		return fromName;
 	}
 	
 	// transposes letters at index and index+1 in the string name
@@ -127,5 +134,23 @@ public class MisspellingGenerator {
 		} else {
 			return name;
 		}
+	}
+
+	private String randomPostcode() {
+		int num = _generator.nextInt(10);
+		String str = String.valueOf(num);
+		str += String.valueOf((char)(_generator.nextInt(26) + 'a')).toUpperCase();
+		if ( _generator.nextBoolean() ) {
+			str += String.valueOf((char)(_generator.nextInt(26) + 'a')).toUpperCase();
+		}
+		return str;
+	}
+	
+	private String randomGender() {
+		return ( _generator.nextBoolean() ? "M" : "F");
+	}
+	
+	private String randomDOB() {
+		return String.valueOf((int) Math.round(1975.0 + 20.0*_generator.nextGaussian()));
 	}
 }
