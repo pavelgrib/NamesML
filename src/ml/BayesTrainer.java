@@ -1,9 +1,6 @@
 package ml;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -43,14 +40,19 @@ public class BayesTrainer {
 		TreeMap<String,String> corrections = new TreeMap<String,String>();			// map from misspelled word to suggested spellin
 		Iterator<NameItem> name_it = inputFP.nameItemIterator();
 		NameItem next;
+		String[] nextName;
 		LetterNeighbor data;
-		char[] charArray;
+		char[] charArray, charArraySearch;
 		char[] twochar = new char[2];
 		double[] oneLetterP, twoLetterP, notOneLetterP, notTwoLetterP, prior;
-		boolean isMisspelled;			// this is between 0 and 1, with some reasonable cutoff forcing the classification
+		SimpleStats tempSS1 = new SimpleStats(), tempSS2 = new SimpleStats(), tempSS3 = new SimpleStats();
+		double lhoodCorrect = 0, lhoodIncorrect = 0;
 		while ( name_it.hasNext() ) {
 			next = name_it.next();
 			// TODO: need some processing to deal with first and last names leading/trailing symbols, numbers, whitespace
+			
+			nextName = next.get_name().split(" ");
+			
 			charArray = next.get_name().toLowerCase().toCharArray();
 			oneLetterP = new double[charArray.length-1];
 			twoLetterP = new double[charArray.length-2];
@@ -75,13 +77,16 @@ public class BayesTrainer {
 				twoLetterP[i] = data.conditionalProbability( String.valueOf(charArray[i+2]), String.valueOf(twochar) );
 				notTwoLetterP[i] = 1 - twoLetterP[i];
 			}
-			isMisspelled = HelperFunctions.product(oneLetterP) > HelperFunctions.product(notOneLetterP) ? false : true;
-			if ( isMisspelled ) {
+			lhoodCorrect = HelperFunctions.product(oneLetterP) * HelperFunctions.product(twoLetterP);
+			lhoodIncorrect = HelperFunctions.product(notOneLetterP) * HelperFunctions.product(notTwoLetterP);
+			if ( lhoodCorrect > lhoodIncorrect ) {
 				misspelled.add(next.get_name());
 				/* TODO search for corrections: will be any modifications of the word that can increase product above the other one
 				 potential solution: find the smallest probability causing the classification, then find the largest one such that there is proximity between
 				 the current misspelled word and the correct one... need to define notion of proximity between strings
 				*/
+				tempSS1.add(oneLetterP);
+//				charArray[tempSS1.get_minAtCount()-1];
 			}
 		}
 

@@ -16,22 +16,27 @@ public class LetterNeighbor {
 	private String _gender;
 	private Histogram _lettersPrior;
 	private Histogram _twoLettersPrior;
+	private Histogram _threeLettersPrior;
 	private Histogram[] _histOne;
 	private Histogram[] _histTwo;
+	private Histogram[] _histThree;
 	private TreeMap<String,Integer> _letters;
 	private TreeMap<String, Integer> _twoLetterSequences;
+	private TreeMap<String, Integer> _threeLetterSequences;
 	
 	public LetterNeighbor(String filepath) throws Exception {
-		mapLetters();
-		mapTwoLetterSequences();
+		mapAll();
 		set_gender("NONE");
 		FileProcessor fp = new FileProcessor(filepath, 1);
 		_lettersPrior = new Histogram( NCHARS, 0, NCHARS );
 		_lettersPrior.setBinNames( _letters.keySet() );
 		_twoLettersPrior = new Histogram( NCHARS*NCHARS, 0, NCHARS*NCHARS );
 		_twoLettersPrior.setBinNames( _twoLetterSequences.keySet() );
+		_threeLettersPrior = new Histogram( NCHARS*NCHARS*NCHARS, 0, NCHARS*NCHARS*NCHARS );
+				
 		_histOne = new Histogram[NCHARS];
 		_histTwo = new Histogram[NCHARS*NCHARS];
+		_histThree = new Histogram[NCHARS*NCHARS*NCHARS];
 		char[] c2 = new char[2];
 		for ( int i = 0; i < NCHARS; i++ ) {
 			// initializing one-letter analysis
@@ -46,6 +51,7 @@ public class LetterNeighbor {
 				_histTwo[i*NCHARS + j].set_histname(String.valueOf(c2));
 				_histTwo[i*NCHARS + j].setBinNames(_letters.keySet());
 			}
+			
 		}
 		this.analyze(fp);
 	}
@@ -74,7 +80,7 @@ public class LetterNeighbor {
 				
 			}
 		}
-
+		
 //		for ( Histogram h: _histOne ) {
 //			System.out.println(h.get_histname());
 //			h.printHist(false, true);
@@ -87,6 +93,12 @@ public class LetterNeighbor {
 //			h.printHist(false, true);
 //			System.out.print("\n\n");
 //		}
+	}
+	
+	// goes through all the histograms and adds counts to take care of the zero probability problem
+	public void sampleCorrect() {
+		// TODO need to do this still
+		
 	}
 	
 	public double priorProbability(String event) {
@@ -109,23 +121,30 @@ public class LetterNeighbor {
 		}
 	}
 
-	private void mapLetters() {
+	private void mapAll() {
 		_letters = new TreeMap<String, Integer>();
-		for ( char c = 'a'; c < ('a' + NCHARS); c++ ) {
-			_letters.put(String.valueOf(c), c - 'a');
+		_twoLetterSequences = new TreeMap<String, Integer>();
+		_threeLetterSequences = new TreeMap<String, Integer>();
+		char[] chars2 = new char[2];
+		char[] chars3 = new char[3];
+		for ( char c1 = 'a'; c1 < ('a' + NCHARS); c1++ ) {
+			_letters.put(String.valueOf(c1), c1 - 'a');
+			chars2[0] = c1;
+			chars3[0] = c1;
+			for ( char c2 = 'a'; c2 < ('a' + NCHARS); c2++ ) {
+				chars2[1] = c2;
+				chars3[1] = c2;
+				_twoLetterSequences.put(String.valueOf(chars2), (c1-'a')*NCHARS + (c2 - 'a'));
+				for ( char c3 = 'a'; c3 < ('a' + NCHARS); c3++ ) {
+					chars3[2] = c3;
+					_threeLetterSequences.put(String.valueOf(chars3), (c1 - 'a')*NCHARS*NCHARS + (c2 - 'a')*NCHARS + (c3 - 'a'));
+				}
+			}
 		}
 	}
 	
-	private void mapTwoLetterSequences() {
-		_twoLetterSequences = new TreeMap<String, Integer>();
-		char[] tempChars = new char[2];
-		for ( char c1 = 'a'; c1 < ('a' + NCHARS); c1++ ) {
-			tempChars[0] = c1;
-			for ( char c2 = 'a'; c2 < ('a' + NCHARS); c2++ ) {
-				tempChars[1] = c2;
-				_twoLetterSequences.put(String.valueOf(tempChars), (c1-'a')*NCHARS + (c2 - 'a'));
-			}
-		}
+	private String likeliestFollowingLetter(String letter) {
+		return _histOne[_letters.get(letter)].maxCountAtName();
 	}
 	
 	public void set_gender(String gender) {

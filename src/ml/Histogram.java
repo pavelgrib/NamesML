@@ -19,16 +19,18 @@ public class Histogram {
 
 	private static final int MAX_PRINT = 100;
 	private TreeMap<Double, Bin> _bins;
-	private int _numBins, _count;
+	private int _numBins, _count, _maxBinCount;
 	private double _min, _max;
 	private Bin _minOverflow, _maxOverflow;
-	private String _histName;
+	private String _histName, _maxBinCountAt;
 	
 	public Histogram(int n, double min, double max) {
 		_count = 0;
 		set_min(min);
 		set_max(max);
+		set_maxC(0);
 		_histName = null;
+		_maxBinCountAt = null;
 		_numBins = n;
 		_minOverflow = new Bin(Double.NEGATIVE_INFINITY, _min);
 		_maxOverflow = new Bin(_max, Double.POSITIVE_INFINITY);
@@ -46,8 +48,12 @@ public class Histogram {
 			_maxOverflow.add(x);
 		} else {
 //			Bin b = _bins.get(Double.toString(_min + _increment * Math.floor(x-_min)));   //_bins[(int) Math.floor((x - _min) / _increment)];
-			Bin b = _bins.get( _numBins * (x - _min) / (_max - _min) );
+			Bin b = _bins.get( _min + Math.floor(_numBins * (x - _min) / (_max - _min))*(_max - _min) / _numBins );
 			b.add(x);
+			if ( b.freq() > _maxBinCount ) {
+				_maxBinCount = b.freq();
+				_maxBinCountAt = b.get_name();
+			}
 		}
 		_count++;
 	}
@@ -112,18 +118,18 @@ public class Histogram {
 		}
 	}
 	
-	public int maxCount() {
-		int maxC = 0;
-		for ( Map.Entry<Double, Bin> b: _bins.entrySet() ) {   //Bin b: _bins ) {
-			if (b.getValue().freq() > maxC) {
-				maxC = b.getValue().freq();
-			}
-		}
-		return maxC;
-	}
+//	public int maxCount() {
+//		int maxC = 0;
+//		for ( Map.Entry<Double, Bin> b: _bins.entrySet() ) {   //Bin b: _bins ) {
+//			if (b.getValue().freq() > maxC) {
+//				maxC = b.getValue().freq();
+//			}
+//		}
+//		return maxC;
+//	}
 
 	public void printHist(boolean includeOverflow, boolean includeBinNames) {
-		double maxC = this.maxCount();
+		double maxC = this.maxBinCount();
 		String repStr = "|";
 		String printStr = "";
 		if ( includeOverflow ) {
@@ -168,7 +174,7 @@ public class Histogram {
 		return _max;
 	}
 
-	public void set_max(double max) {
+	private void set_max(double max) {
 		this._max = max;
 	}
 
@@ -176,7 +182,7 @@ public class Histogram {
 		return _min;
 	}
 
-	public void set_min(double min) {
+	private void set_min(double min) {
 		this._min = min;
 	}
 
@@ -203,4 +209,17 @@ public class Histogram {
 		}
 		return output;
 	}
+
+	public String maxCountAtName() {
+		return _maxBinCountAt;
+	}
+	
+	private void set_maxC(int maxC) {
+		_maxBinCount = maxC;
+	}
+	
+	public int maxBinCount() {
+		return _maxBinCount;
+	}
+
 }
