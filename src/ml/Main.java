@@ -3,7 +3,6 @@ package ml;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.Random;
 import def.*;
 
 /**
@@ -14,7 +13,7 @@ public class Main {
 	
 	// Mac OS X setups only
 	private static final String WORKINGDIR = "/Users/" + System.getProperty("user.name") + "/github/local/NamesML/";
-	
+	private static final String OUTPUTDIR = WORKINGDIR + "validation/";
 	public static void main(String[] args) {
 //		FileProcessor fp = new FileProcessor("/Users/paul/Documents/Imperial/NamesML/TestNames.txt");
 //		fp.printAllNames();
@@ -28,7 +27,9 @@ public class Main {
 //		h.printHist(true, true);
 		try {
 			LetterNeighbor lh = new LetterNeighbor(WORKINGDIR + "names/male_names.txt");
-
+			MisspellingGenerator spell = new MisspellingGenerator(WORKINGDIR + "names/male_names.txt", 1);
+			spell.generateMisspelledFile(OUTPUTDIR + "male_names_misspelled.txt", "M");
+			HelperFunctions.printFileLinesToConsole(OUTPUTDIR + "male_names_misspelled.txt");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -45,6 +46,7 @@ public class Main {
 //			System.out.println(cs_it.next());
 //		}
 //		HelperFunctions.printDirectoryContents(WORKINGDIR);
-//		MisspellingGenerator spell = new MisspellingGenerator(WORKINGDIR + "names/male_names.txt");
+
+
 	}
 }

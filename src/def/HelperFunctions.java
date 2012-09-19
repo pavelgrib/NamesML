@@ -1,7 +1,10 @@
 package def;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
@@ -48,6 +51,35 @@ public final class HelperFunctions {
 			} else {
 				System.out.print("\n");
 			}
+		}
+	}
+	
+	public static double sum(double[] array) {
+		double sum = 0.0;
+		for ( double x: array ) {
+			sum += x;
+		}
+		return sum;
+	}
+	
+	// note: use with caution, tendency to explode
+	public static double product(double[] array) {
+		double prod = 1;
+		for ( double x: array ) {
+			prod *= x;
+		}
+		return prod;
+	}
+	
+	public static void printFileLinesToConsole(String file) {
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(file));
+			String line;
+			while ( (line = br.readLine()) != null) {
+				System.out.println(line);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 }

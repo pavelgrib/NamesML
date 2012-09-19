@@ -19,7 +19,7 @@ public class MisspellingGenerator {
 		_fp = new FileProcessor(filepath, ncol);
 	}
 	
-	public void generateMisspelledFile(String filepath) {
+	public void generateMisspelledFile(String filepath, String gender) {
 		try {
 			BufferedWriter bw = new BufferedWriter(new FileWriter(filepath));
 			Iterator<NameItem> ni_it = _fp.nameItemIterator();
@@ -31,7 +31,11 @@ public class MisspellingGenerator {
 					bw.write(nextName + "\n");
 				} else {
 					nextPostcode = randomPostcode();
-					nextGender = randomGender();
+					if ( gender != "M" || gender != "F" ) {
+						nextGender = randomGender();
+					} else {
+						nextGender = gender;
+					}
 					nextDOB = randomDOB();
 					bw.write("\"" + nextName + "\"\t" + nextGender + "\"\t" + nextPostcode + "\"\t" + nextDOB + "\n");
 				}
@@ -44,7 +48,7 @@ public class MisspellingGenerator {
 		}
 	}
 	
-	public LinkedList<String> generateMisspelledList() {
+	public LinkedList<String> generateMisspelledList(String gender) {
 		LinkedList<String> misspelledList = new LinkedList<String>();
 		Iterator<NameItem> ni_it = _fp.nameItemIterator();
 		String next = "";
@@ -57,17 +61,19 @@ public class MisspellingGenerator {
 	}
 	
 	private String generateMisspelledName(String fromName) {
+		String misspelled = null;
 		if ( _generator.nextBoolean() ) {
 			int misspelling = _generator.nextInt(NUM_MISSPELLINGS);
 			switch ( misspelling ) {
-				case 0: fromName = transposeNeighborLetters(fromName, _generator.nextInt(fromName.length() - 2)); break;
-				case 1: fromName = insertSymbol(fromName, SYMBOLS[_generator.nextInt(SYMBOLS.length-1)], _generator.nextInt(fromName.length() - 2)); break;
-				case 2: fromName = omitLetter(fromName, _generator.nextInt(fromName.length() - 2)); break;
-				case 3: fromName = repeatLetter(fromName, _generator.nextInt(fromName.length() - 2)); break;
-				case 4: fromName = takeOutRepeatingLetter(fromName); break;
+				case 0: misspelled = transposeNeighborLetters(fromName, _generator.nextInt(fromName.length() - 2)); break;
+				case 1: misspelled = insertSymbol(fromName, SYMBOLS[_generator.nextInt(SYMBOLS.length-1)], _generator.nextInt(fromName.length() - 2)); break;
+				case 2: misspelled = omitLetter(fromName, _generator.nextInt(fromName.length() - 2)); break;
+				case 3: misspelled = repeatLetter(fromName, _generator.nextInt(fromName.length() - 2)); break;
+				case 4: misspelled = takeOutRepeatingLetter(fromName); break;
+				default: misspelled = fromName;
 			}
 		}
-		return fromName;
+		return misspelled;
 	}
 	
 	// transposes letters at index and index+1 in the string name
