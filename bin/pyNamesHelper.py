@@ -1,4 +1,5 @@
-import random, os
+import random, os, math
+from string import ascii_letters
 
 namesPath = '/Users/pg/github/local/NamesML/names/'
 trainingPath = '/Users/pg/github/local/NamesML/training/'
@@ -25,8 +26,39 @@ def extractTrainingSet(file, percent):
     print 'written training file containing ' + str(train_count) + ' names to ' + trainingPath + file
     print 'written validation file containing ' + str(validate_count) + ' names to ' + validatePath + file
 
+## quickly pick some elements and manually determine spelling of those entries to estimate p(C)
+def randomEntries(n, file):
+    fd = open(file, 'r')
+    lines = fd.readlines()
+    entries = map(lambda u: u.split('\t')[0], random.sample(lines, n))
+    print len(entries)
+    output = dict()
+    for entry in entries:
+        flag = int(raw_input("is " + entry + " misspelled? "))
+        output[entry] = flag
+    print float(sum(output.values())) / float(len(output))
+    return output
+
+def strHist(file, n):
+    fd = open(fle, 'r')
+    hist = dict()
+    lines = "".join(rd.readlines())
+    
+
+def charHist(file):
+    fd = open(file, 'r')
+    hist = dict()
+    lines = "".join(fd.readlines())
+    for c in xrange(ord('a'),ord('z')+1):
+        hist[chr(c)] = lines.count(chr(c))
+    fd.close()
+    return hist
+
+def printHist(hist):
+    m = hist[max(hist, key=hist.get)]
+    for k, v in hist.items():
+        rep = int(100.0*float(v)/float(m))
+        print str(k) + ' ' + ('|' * rep)
+
 if __name__ == '__main__':
-    namesDir = os.listdir(namesPath)
-    pct = 75
-    for f in namesDir:
-        extractTrainingSet(f, pct)    
+    pass

@@ -71,7 +71,8 @@ public final class HelperFunctions {
 		}
 		return prod;
 	}
-	
+
+	@SuppressWarnings("resource")
 	public static void printFileLinesToConsole(String file) {
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(file));

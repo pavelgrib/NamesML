@@ -1,11 +1,11 @@
 package ml;
 
-import java.io.File;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeMap;
+//import java.io.File;
+//import java.util.Iterator;
+//import java.util.LinkedList;
+//import java.util.Random;
+//import java.util.Set;
+//import java.util.TreeMap;
 import def.*;
 
 /**
@@ -18,8 +18,8 @@ public class Main {
 	private static final String WORKINGDIR = "/Users/" + System.getProperty("user.name") + "/github/local/NamesML/";
 	private static final String OUTPUTDIR = WORKINGDIR + "validation/";
 	public static void main(String[] args) {
-//		FileProcessor fp = new FileProcessor("/Users/paul/Documents/Imperial/NamesML/TestNames.txt");
-//		fp.printAllNames();
+		FileProcessor fp = new FileProcessor("/Users/paul/Documents/Imperial/ImperialChallenge1.txt", 4);
+		fp.printAllNames();
 //		fp.printeFile();
 //		Random generator = new Random();
 //		double mean = 0.5, variance = 0.01;
@@ -37,7 +37,7 @@ public class Main {
 //		} catch (Exception e) {
 //			e.printStackTrace();
 //		}
-		
+//		double prior = 0.3;
 //		String[] files = ( new File(OUTPUTDIR) ).list();
 //		FileProcessor fp;
 //		String gender;
@@ -52,12 +52,13 @@ public class Main {
 //			}
 //			try {
 //				lh[i] = new LetterNeighbor(new FileProcessor(OUTPUTDIR + files[i], 1), gender);
+//				lh[i] = 
 //			} catch (Exception e) {
 //				e.printStackTrace();
 //			}
 //		}
-		
-		LetterNeighbor l = new LetterNeighbor();
-		l.printStringValues();
+//		
+//		LetterNeighbor l = new LetterNeighbor();
+//		l.printStringValues();
 	}
 }

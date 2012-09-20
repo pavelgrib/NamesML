@@ -21,6 +21,9 @@ public class BayesTrainer {
 	private static final String OUTPUTPATH = "/Users/" + System.getProperty("user.name") + "/github/local/NamesML/results/";
 	private String _inputFile;
 	private double _prior;
+	private LetterNeighbor _ln_male;
+	private LetterNeighbor _ln_female;
+	private LetterNeighbor _ln_surnames;
 	
 	public BayesTrainer() {
 		_prior = 0.5;
@@ -29,8 +32,20 @@ public class BayesTrainer {
 		for ( File f: namesFolder.listFiles() ) {
 			files.put(f.getName().split(".")[0], f);
 		}
+		
+		try {
+			this.train();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
+	public void train() throws Exception {
+		_ln_male = new LetterNeighbor(TRAININGPATH + "male.txt");
+		_ln_female = new LetterNeighbor(TRAININGPATH + "female.txt");
+		_ln_surnames = new LetterNeighbor(TRAININGPATH + "surnames.txt");
+	}
+
 	// this value extracted from a small sample of input file to get approximate rate of misspelling via visual observation (pyNamesHelper.randomEntries)
 	public void set_prior(double p) {
 		_prior = p;
@@ -41,7 +56,7 @@ public class BayesTrainer {
 	}
 	
 	// classifies everything in the input file according to the LetterNeighbor instance passed in
-	public void bayesClassify(LetterNeighbor[] ln) {
+	public void bayesClassify() {
 		FileProcessor inputFP = new FileProcessor(_inputFile, 4);
 		LinkedList<String> misspelled = new LinkedList<String>();					// list of misspelled words
 		TreeMap<String,String> corrections = new TreeMap<String,String>();			// map from misspelled word to suggested spellin
@@ -66,9 +81,9 @@ public class BayesTrainer {
 			notOneLetterP = new double[charArray.length-1];
 			notTwoLetterP = new double[charArray.length-2];
 			if ( next.get_gender() == "M" ) {
-				data = ln[0];
+				data = _ln_male;
 			} else {
-				data = ln[1];
+				data = _ln_female;
 			}
 			for ( int i = 0 ; i < charArray.length-1; i++ ) {
 				oneLetterP[i] = data.conditionalProbability( String.valueOf(charArray[i+1]), String.valueOf(charArray[i]) );

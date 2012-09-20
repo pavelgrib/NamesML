@@ -1,10 +1,7 @@
 package ml;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -19,7 +16,7 @@ import def.*;
 public class LetterNeighbor {
 
 	public static final int NCHARS = 28;
-	private String _gender;
+//	private String _gender;
 //	private Histogram _lettersPrior;
 //	private Histogram _twoLettersPrior;
 //	private Histogram _threeLettersPrior;
@@ -33,16 +30,16 @@ public class LetterNeighbor {
 	
 	public LetterNeighbor() {
 		mapAll();
-	}		// dummy, won't be used
+	}		// dummy, don't use
 	
-	public LetterNeighbor(FileProcessor fp, String gender) throws Exception {
-		set_gender(gender);
+	public LetterNeighbor(FileProcessor fp) throws Exception {
+//		set_gender(gender);
 		init();
 		this.analyze(fp);
 //		this.sampleCorrect();
 	}
 	
-	public LetterNeighbor(String filepath, String gender) throws Exception {
+	public LetterNeighbor(String filepath) throws Exception {
 		FileProcessor fp = new FileProcessor(filepath, 1);
 		init();
 		this.analyze(fp);
@@ -255,12 +252,4 @@ public class LetterNeighbor {
 		out = excluding.contains(out) ? histArray[strMap.get(str)].maxCountAt(excluding) : histArray[strMap.get(str)].maxCountAtName();
 		return out;
  	}
-	
-	public void set_gender(String gender) {
-		_gender = gender;
-	}
-	
-	public String get_gender() {
-		return _gender;
-	}
 }
