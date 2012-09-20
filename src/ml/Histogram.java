@@ -1,6 +1,8 @@
 package ml;
 
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -23,8 +25,9 @@ public class Histogram {
 	private double _min, _max;
 	private Bin _minOverflow, _maxOverflow;
 	private String _histName, _maxBinCountAt;
+	private boolean _overflow;
 	
-	public Histogram(int n, double min, double max) {
+	public Histogram(int n, double min, double max, boolean overflow) {
 		_count = 0;
 		set_min(min);
 		set_max(max);
@@ -32,8 +35,11 @@ public class Histogram {
 		_histName = null;
 		_maxBinCountAt = null;
 		_numBins = n;
-		_minOverflow = new Bin(Double.NEGATIVE_INFINITY, _min);
-		_maxOverflow = new Bin(_max, Double.POSITIVE_INFINITY);
+		_overflow = overflow;
+		if ( overflow ) {
+			_minOverflow = new Bin(Double.NEGATIVE_INFINITY, _min);
+			_maxOverflow = new Bin(_max, Double.POSITIVE_INFINITY);
+		}
 		_bins = new TreeMap<Double, Bin>();
 		for ( int i = 0; i < n; i++ ) {
 //			System.out.println("Bin " + i + " covering [" + ((_min*(_numBins-i) + i*_max) / _numBins) + ", " + ((_min*(_numBins-i-1) + (i+1)*_max) / _numBins) + ")");  
@@ -42,11 +48,16 @@ public class Histogram {
 	}
 	
 	public void add(double x) {
-		if ( x < _min ) {
-			_minOverflow.add(x);
-		} else if ( x >= _max ) {
-			_maxOverflow.add(x);
-		} else {
+		if ( _overflow ) {
+			if ( x < _min ) {
+				_minOverflow.add(x);
+			} else if ( x >= _max ) {
+				_maxOverflow.add(x);
+			}
+			_count++;
+		} 
+		
+		if ( x >= _min && x < _max ) {
 //			Bin b = _bins.get(Double.toString(_min + _increment * Math.floor(x-_min)));   //_bins[(int) Math.floor((x - _min) / _increment)];
 			Bin b = _bins.get( _min + Math.floor(_numBins * (x - _min) / (_max - _min))*(_max - _min) / _numBins );
 			b.add(x);
@@ -54,8 +65,8 @@ public class Histogram {
 				_maxBinCount = b.freq();
 				_maxBinCountAt = b.get_name();
 			}
+			_count++;
 		}
-		_count++;
 	}
 
 	public void add(double x, int n) {
@@ -70,7 +81,7 @@ public class Histogram {
 		} else if ( x >= _max ) {
 			return _maxOverflow.freq();
 		} else {
-			return _bins.get( _bins.floorKey( _bins.floorKey(Math.floor((x - _min) *_numBins / (_max - _min)) / _max ) ) ).freq();
+			return _bins.get( _min + Math.floor(_numBins * (x - _min) / (_max - _min))*(_max - _min) / _numBins ).freq();
 		}
 	}
 	
@@ -118,15 +129,19 @@ public class Histogram {
 		}
 	}
 	
-//	public int maxCount() {
-//		int maxC = 0;
-//		for ( Map.Entry<Double, Bin> b: _bins.entrySet() ) {   //Bin b: _bins ) {
-//			if (b.getValue().freq() > maxC) {
-//				maxC = b.getValue().freq();
-//			}
-//		}
-//		return maxC;
-//	}
+	public String maxCountAt(List<String> excluding) {
+		int maxCValue = 0;
+		String maxCKey = null;
+		for ( Map.Entry<Double, Bin> b: _bins.entrySet() ) {   //Bin b: _bins ) {
+			if ( !excluding.contains(b.getValue().get_name()) ) {
+				if (b.getValue().freq() > maxCValue) {
+					maxCValue = b.getValue().freq();
+					maxCKey = b.getValue().get_name();
+				}
+			}
+		}
+		return maxCKey;
+	}
 
 	public void printHist(boolean includeOverflow, boolean includeBinNames) {
 		double maxC = this.maxBinCount();
@@ -154,7 +169,7 @@ public class Histogram {
 		Iterator<Entry<Double, Bin>> bins1 = h1.binEntryIterator();
 		Iterator<Entry<Double, Bin>> bins2 = h2.binEntryIterator();
 		if ( h1.compareBins(h2) ) {
-			Histogram combined = new Histogram( h1.get_numbins(), h1.get_min(), h1.get_max() );
+			Histogram combined = new Histogram( h1.get_numbins(), h1.get_min(), h1.get_max(), true);
 			Bin b1, b2;
 			while ( bins1.hasNext() && bins2.hasNext() ) {
 				b1 = bins1.next().getValue();
@@ -204,10 +219,14 @@ public class Histogram {
 	
 	public boolean compareBins(Histogram h) {
 		boolean output = false;
-		if ( get_numbins()==h.get_numbins() || get_max()==h.get_max() || get_min()==h.get_min() ) {
+		if ( get_numbins()==h.get_numbins() && get_max()==h.get_max() && get_min()==h.get_min() && h.get_overflow() == get_overflow()) {
 			output = true;
 		}
 		return output;
+	}
+
+	public boolean get_overflow() {
+		return _overflow;
 	}
 
 	public String maxCountAtName() {

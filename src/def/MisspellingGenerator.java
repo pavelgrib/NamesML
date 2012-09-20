@@ -10,7 +10,7 @@ import java.util.Random;
 public class MisspellingGenerator {
 	
 	private static final int NUM_MISSPELLINGS = 5;
-	private static final char[] SYMBOLS = {'!', ',', '@', '#', '$', '%', '^', '&', '*', '(', ')', '{', '}', '[', ']', '\'', '\"', '-', '=', '<', '>', '/', '?', '\\'};
+	private static final char[] SYMBOLS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '!', ',', '@', '#', '$', '%', '^', '&', '*', '(', ')', '{', '}', '[', ']', '\'', '\"', '-', '=', '<', '>', '/', '?', '\\', ' ', '\t'};
 	private Random _generator;
 	private FileProcessor _fp;
 	

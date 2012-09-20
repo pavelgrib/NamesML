@@ -20,13 +20,20 @@ public class BayesTrainer {
 	private static final String TRAININGPATH = "/Users/" + System.getProperty("user.name") + "/github/local/NamesML/names/";
 	private static final String OUTPUTPATH = "/Users/" + System.getProperty("user.name") + "/github/local/NamesML/results/";
 	private String _inputFile;
+	private double _prior;
 	
 	public BayesTrainer() {
+		_prior = 0.5;
 		File namesFolder = new File(TRAININGPATH);
 		HashMap<String, File> files = new HashMap<String, File>();
 		for ( File f: namesFolder.listFiles() ) {
 			files.put(f.getName().split(".")[0], f);
 		}
+	}
+	
+	// this value extracted from a small sample of input file to get approximate rate of misspelling via visual observation (pyNamesHelper.randomEntries)
+	public void set_prior(double p) {
+		_prior = p;
 	}
 	
 	public void setInputFile(String path) {
@@ -45,7 +52,7 @@ public class BayesTrainer {
 		char[] charArray, charArraySearch;
 		char[] twochar = new char[2];
 		double[] oneLetterP, twoLetterP, notOneLetterP, notTwoLetterP, prior;
-		SimpleStats tempSS1 = new SimpleStats(), tempSS2 = new SimpleStats(), tempSS3 = new SimpleStats();
+//		SimpleStats tempSS1 = new SimpleStats(), tempSS2 = new SimpleStats(), tempSS3 = new SimpleStats();
 		double lhoodCorrect = 0, lhoodIncorrect = 0;
 		while ( name_it.hasNext() ) {
 			next = name_it.next();
@@ -58,14 +65,12 @@ public class BayesTrainer {
 			twoLetterP = new double[charArray.length-2];
 			notOneLetterP = new double[charArray.length-1];
 			notTwoLetterP = new double[charArray.length-2];
-			prior = new double[charArray.length];
 			if ( next.get_gender() == "M" ) {
 				data = ln[0];
 			} else {
 				data = ln[1];
 			}
 			for ( int i = 0 ; i < charArray.length-1; i++ ) {
-				prior[i] = data.priorProbability(String.valueOf(charArray[i]));
 				oneLetterP[i] = data.conditionalProbability( String.valueOf(charArray[i+1]), String.valueOf(charArray[i]) );
 				notOneLetterP[i] = 1 - oneLetterP[i];
 			}
@@ -73,7 +78,6 @@ public class BayesTrainer {
 			for ( int i = 0; i < charArray.length - 2; i++ ) {
 				twochar[0] = charArray[i];
 				twochar[1] = charArray[i+1];
-				prior[i] = data.priorProbability(String.valueOf(twochar));
 				twoLetterP[i] = data.conditionalProbability( String.valueOf(charArray[i+2]), String.valueOf(twochar) );
 				notTwoLetterP[i] = 1 - twoLetterP[i];
 			}
@@ -85,7 +89,7 @@ public class BayesTrainer {
 				 potential solution: find the smallest probability causing the classification, then find the largest one such that there is proximity between
 				 the current misspelled word and the correct one... need to define notion of proximity between strings
 				*/
-				tempSS1.add(oneLetterP);
+//				tempSS1.add(oneLetterP);
 //				charArray[tempSS1.get_minAtCount()-1];
 			}
 		}

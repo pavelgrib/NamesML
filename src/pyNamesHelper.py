@@ -34,9 +34,16 @@ def randomEntries(n, file):
     print len(entries)
     output = dict()
     for entry in entries:
-        flag = raw_input("is " + entry + " misspelled? ")
+        flag = int(raw_input("is " + entry + " misspelled? "))
         output[entry] = flag
+    print float(sum(output.values())) / float(len(output))
     return output
+
+def strHist(file, n):
+    fd = open(fle, 'r')
+    hist = dict()
+    lines = "".join(rd.readlines())
+    
 
 def charHist(file):
     fd = open(file, 'r')

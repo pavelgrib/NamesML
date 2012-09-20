@@ -1,6 +1,8 @@
 package ml;
 
+import java.io.File;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
@@ -19,14 +21,14 @@ public class Main {
 //		FileProcessor fp = new FileProcessor("/Users/paul/Documents/Imperial/NamesML/TestNames.txt");
 //		fp.printAllNames();
 //		fp.printeFile();
-		Random generator = new Random();
-		double mean = 0, variance = 10;
-		// test to make sure Histogram class works
-		Histogram h = new Histogram(100, 0.0, 10.0);
-		for ( int i = 0; i < 1000000; i++ ) {
-			h.add(mean + variance * generator.nextDouble());
-		}
-		h.printHist(true, true);
+//		Random generator = new Random();
+//		double mean = 0.5, variance = 0.01;
+//		// test to make sure Histogram class works
+//		Histogram h = new Histogram(100, 0.0, 1.0);
+//		for ( int i = 0; i < 10000; i++ ) {
+//			h.add(mean + Math.sqrt(variance) * generator.nextGaussian());
+//		}
+//		h.printHist(true, true);
 //		try {
 //			LetterNeighbor lh = new LetterNeighbor(WORKINGDIR + "names/male_names.txt");
 //			MisspellingGenerator spell = new MisspellingGenerator(WORKINGDIR + "names/male_names.txt", 1);
@@ -36,27 +38,26 @@ public class Main {
 //			e.printStackTrace();
 //		}
 		
-		// test to make sure TreeMap.keySet() returns them in order
-//		TreeMap<Character, Double> tm = new TreeMap<Character, Double>();
-//		for ( int i = 0; i < 26; i++ ) {
-//			tm.put((char) ('a' + i), generator.nextGaussian());
+//		String[] files = ( new File(OUTPUTDIR) ).list();
+//		FileProcessor fp;
+//		String gender;
+//		LetterNeighbor[] lh = new LetterNeighbor[files.length];
+//		for ( int i = 0; i < files.length; i++ ) {
+//			if ( files[i].contains("male") ) {
+//				gender = "MALE";
+//			} else if ( files[i].contains("female") ) {
+//				gender = "FEMALE";
+//			} else {
+//				gender = "NONE";
+//			}
+//			try {
+//				lh[i] = new LetterNeighbor(new FileProcessor(OUTPUTDIR + files[i], 1), gender);
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
 //		}
-//		
-//		Set<Character> cs = tm.keySet();
-//		Iterator<Character> cs_it = cs.iterator();
-//		while ( cs_it.hasNext() ) {
-//			System.out.println(cs_it.next());
-//		}
-//		HelperFunctions.printDirectoryContents(WORKINGDIR);
-
-		Histogram testhist = new Histogram(100, 0, 10);
-//		for ( int i = 0; i < 5000; i++ ) {
-//			testhist.add(0);
-//		}
-//		for ( int i = 0; i < 10000; i++ ) {
-//			testhist.add(mean + Math.sqrt(variance)*generator.nextGaussian());
-//		}
-//		
-//		System.out.println(testhist.maxBinCount());
+		
+		LetterNeighbor l = new LetterNeighbor();
+		l.printStringValues();
 	}
 }
