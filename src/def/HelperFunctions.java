@@ -6,11 +6,15 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
+import org.apache.commons.collections.iterators.ArrayIterator;
+//import org.apache.commons.collections.iterators.ArrayIterator;
 import org.apache.commons.lang3.StringUtils;
 
 public final class HelperFunctions {
@@ -92,5 +96,96 @@ public final class HelperFunctions {
 	        }
 	    }
 	    return null;
+	}
+	
+	public static String eclosingDir(String file) {
+		String[] temp = file.split("/");
+		String output = "/";
+		for ( int i = 0; i < temp.length-1; i++ ) {
+			output += temp[i] + "/";
+		}
+		return output;
+	}
+	
+	public static String fileNumber(String file) {
+		char[] arr = file.split("\\.")[0].toCharArray();
+		char[] out = new char[4];
+		for ( int i = 0; i < arr.length; i++ ) {
+			if ( Character.isDigit(arr[i]) ) {
+				for ( int j = i; j < arr.length; j++ ) {
+					out[j-i] = arr[j];
+				}
+			    break;
+			}
+		}
+		return  String.valueOf(out);
+	}
+	
+	public static <K, V> void writeMapToFile(Map<K, V> map, String filepath) {
+		try {
+			BufferedWriter bw = new BufferedWriter(new FileWriter(filepath));
+			Set<K> keys = map.keySet();
+			for ( Iterator<K> i = keys.iterator(); i.hasNext(); ) {
+			     K key = i.next();
+			     V value = map.get(key);
+				bw.write(key.toString() + "," + value.toString()  + "\n");
+			}
+			bw.flush();
+			bw.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static String surroundWithQuotes(String s) {
+		int l = s.length();
+		char[] s_arr = s.toCharArray();
+		char[] out = new char[2 + l];
+		out[0] = '\"';
+		for ( int i = 0; i < l; i++ ) {
+			out[i+1] = s_arr[i]; 
+		}
+		out[l+1] = '\"';
+		return String.valueOf(out);
+	}
+
+	public static double min(double[] array) {
+		double min = Double.POSITIVE_INFINITY;
+		for ( double x: array ) {
+			min = ( x < min ? x: min);
+		}
+		return min;
+	}
+
+	public static double max(double[] array) {
+		double max = Double.NEGATIVE_INFINITY;
+		for ( double x: array ) {
+			max = ( x > max ? x: max);
+		}
+		return max;
+	}
+
+	public static String purgeWhitespace(String s) {
+		char[] arr = s.toCharArray();
+		char next;
+		ArrayIterator it = new ArrayIterator(arr);
+		while ( it.hasNext() ) {
+			if ( Character.isWhitespace((Character) it.next())) {
+				it.remove();
+			}
+		}
+		return String.valueOf(arr);
+	}
+	
+	public static int minAt(double[] array) {
+		double min = Double.POSITIVE_INFINITY;
+		int idx = 0;
+		for ( int i = 0; i < array.length; i++ ) {
+			if ( array[i] < min ) {
+				min = array[i];
+				idx = i;
+			}
+		}
+		return idx;
 	}
 }

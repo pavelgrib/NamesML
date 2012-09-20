@@ -59,6 +59,14 @@ def printHist(hist):
         rep = int(100.0*float(v)/float(m))
         print str(k) + ' ' + ('|' * rep)
 
+def combineFilesList(filesList, newFile):
+    out = open(newFile,'w+')
+    for i in filesList:
+        fd = open(i,'r')
+        out.write(''.join(fd.readlines()))
+    out.flush()
+    out.close()
+
 def combineFiles(file1, file2, newFile):
     fd1 = open(file1, 'r+')
     fd2 = open(file2, 'r+')
@@ -73,13 +81,19 @@ def combineFiles(file1, file2, newFile):
 def splitFile(file, times):
     fd = open(file, 'r')
     lines = fd.readlines()
-    linesperfile = int(math.ceil(len(lines) / times))
+    linesperfile = int(math.ceil(float(len(lines)) / float(times)))
     name = fd.name.split('/')[-1]
+    count = 0
     for i in range(0,times):
         out = open('/'.join(fd.name.split('/')[0:-1]) + '/' + name.split('.')[0] + str(i+1) + '.' + name.split('.')[1],'w+')
         out.write(''.join(lines[i*linesperfile:(i+1)*linesperfile]))
         out.flush()
         out.close()
+        counter = open(out.name, 'r')
+        count = count + len(counter.readlines())
+        counter.close()
+    print str(len(lines)) + ' lines in original and ' + str(count) + ' lines written out'
+    fd.close()
 
 if __name__ == '__main__':
     pass

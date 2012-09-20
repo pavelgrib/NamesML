@@ -67,9 +67,4 @@ public class FileProcessor {
 		return _ncol;
 	}
 	
-	public static void main(String[] args) {
-
-	}
-
-
 }

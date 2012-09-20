@@ -16,11 +16,8 @@ import def.*;
 public class LetterNeighbor {
 
 	public static final int NCHARS = 28;
-//	private String _gender;
-//	private Histogram _lettersPrior;
-//	private Histogram _twoLettersPrior;
-//	private Histogram _threeLettersPrior;
 	private Histogram[] _histOne;
+	private Histogram[] _histOneBack;
 	private Histogram[] _histTwo;
 	private Histogram[] _histThree;
 	private Histogram[] _histFour;
@@ -30,10 +27,10 @@ public class LetterNeighbor {
 	
 	public LetterNeighbor() {
 		mapAll();
+		HelperFunctions.writeMapToFile(_letters, "/Users/paul/Desktop/letters.txt");
 	}		// dummy, don't use
 	
 	public LetterNeighbor(FileProcessor fp) throws Exception {
-//		set_gender(gender);
 		init();
 		this.analyze(fp);
 //		this.sampleCorrect();
@@ -48,24 +45,21 @@ public class LetterNeighbor {
 	
 	private void init() {
 		mapAll();
-		try {
-//			_lettersPrior = new Histogram( NCHARS, 0, NCHARS );
-//			_lettersPrior.setBinNames( _letters.keySet() );
-//			_twoLettersPrior = new Histogram( NCHARS*NCHARS, 0, NCHARS*NCHARS );
-//			_twoLettersPrior.setBinNames( _twoLetterSequences.keySet() );
-//			_threeLettersPrior = new Histogram( NCHARS*NCHARS*NCHARS, 0, NCHARS*NCHARS*NCHARS );
-			
-			_histOne = new Histogram[NCHARS];					// p(a1 | b1)
-			_histTwo = new Histogram[NCHARS*NCHARS];			// p(a1 | b2)
-			_histThree = new Histogram[NCHARS];					// p(a2 | b1)
-			_histFour = new Histogram[NCHARS*NCHARS];			// p(a2 | b2)
+		try {			
+			_histOne = new Histogram[NCHARS];					// p(next a1 | b1)
+			_histOneBack = new Histogram[NCHARS];				// p(a1 | prev b1)
+			_histTwo = new Histogram[NCHARS*NCHARS];			// p(next a1 | b2)
+			_histThree = new Histogram[NCHARS];					// p(next a2 | b1)
+			_histFour = new Histogram[NCHARS*NCHARS];			// p(next a2 | b2)
 			char[] c2 = new char[2];
 			for ( int i = 0; i < NCHARS; i++ ) {
 				c2[0] = HelperFunctions.getKeyByValue(_letters, i).charAt(0);
 				_histOne[i] = new Histogram(NCHARS, 0, NCHARS, false);
 				_histOne[i].set_histname( String.valueOf(c2[0]) );
 				_histOne[i].setBinNames( _letters.keySet() );
-				
+				_histOneBack[i] = new Histogram(NCHARS, 0, NCHARS, false);
+				_histOneBack[i].set_histname( String.valueOf(c2[0]) );
+				_histOneBack[i].setBinNames( _letters.keySet() );
 				_histThree[i] = new Histogram(NCHARS*NCHARS, 0, NCHARS*NCHARS, false);
 				_histThree[i].set_histname( HelperFunctions.getKeyByValue(_letters, i) );
 				_histThree[i].setBinNames( _twoLetterSequences.keySet() );
@@ -90,7 +84,7 @@ public class LetterNeighbor {
 		char[] charArray;
 		char[] twoLetterArray = new char[2];
 		char[] twoLetterArray2 = new char[2];
-		int idx1, idxnext1, idx2, idxnext2, idxnext3, idxnext4;
+		int idx1, idxnext1, idx2, idxnext2, idxnext3, idxnext4, idx5, idxnext5;
 		while ( it.hasNext() ) {
 			charArray = it.next().get_name().toCharArray();
 			for ( int i = 0; i < charArray.length-1; i++ ) {
@@ -99,10 +93,10 @@ public class LetterNeighbor {
 				idx1 = _letters.get(String.valueOf(charArray[i]).toLowerCase());						// index into histogram array for current letter
 				idxnext1  = _letters.get(String.valueOf(charArray[i+1]).toLowerCase());					// index into bin in that histogram for following letter
 				_histOne[idx1].add(idxnext1);															// adding instance
+				_histOneBack[idxnext1].add(idx1);
 				if ( i < charArray.length-2 ) {
-				
 					twoLetterArray[1] = charArray[i+1];
-					idxnext3 = _twoLetterSequences.get( String.valueOf(charArray[i]).toLowerCase() );	// index into histogram bins for current 2-string
+					idxnext3 = _twoLetterSequences.get( String.valueOf(twoLetterArray).toLowerCase() );	// index into histogram bins for current 2-string
 					_histThree[idx1].add(idxnext3);														// adding letter conditional on 2-string
 					
 					idx2 = _twoLetterSequences.get( String.valueOf(twoLetterArray).toLowerCase() );		// index into histogram array for current 2-string
@@ -116,7 +110,6 @@ public class LetterNeighbor {
 						_histFour[idx2].add(idxnext4);													// adding instance
 					}
 				}
-				
 			}
 		}
 		
@@ -156,11 +149,17 @@ public class LetterNeighbor {
 				}
 			}
 		}
-		for ( Histogram h4: _histFour ) {
+//		for ( Histogram h4: _histFour ) {
+//			for ( int i = 1; i < NCHARS; i++ ) {
+//				for ( int j = 1; j < NCHARS; j++ ) {
+//					h4.add( i*NCHARS + j );
+//				}
+//			}
+//		}
+		
+		for ( Histogram h5: _histOneBack ) {
 			for ( int i = 1; i < NCHARS; i++ ) {
-				for ( int j = 1; j < NCHARS; j++ ) {
-					h4.add( i*NCHARS + j );
-				}
+				h5.add(i);
 			}
 		}
 	}
@@ -245,7 +244,7 @@ public class LetterNeighbor {
 			if ( str.length() == 1 ) {
 				histArray = _histTwo;
 			} else {
-				histArray = _histFour;
+				histArray = _histTwo;
 			}
 		}
 		out = histArray[strMap.get(str)].maxCountAtName();

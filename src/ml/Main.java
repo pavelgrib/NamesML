@@ -16,10 +16,21 @@ public class Main {
 	
 	// Mac OS X setups only
 	private static final String WORKINGDIR = "/Users/" + System.getProperty("user.name") + "/github/local/NamesML/";
-	private static final String OUTPUTDIR = WORKINGDIR + "validation/";
+	private static final String OUTPUTDIR = "/Users/" + System.getProperty("user.name") + "/Documents/Imperial/ImperialChallenge/output/";
 	public static void main(String[] args) {
-		FileProcessor fp = new FileProcessor("/Users/paul/Documents/Imperial/ImperialChallenge1.txt", 4);
-		fp.printAllNames();
+		try {
+			BayesTrainer bt = new BayesTrainer();
+			for ( int i = 1; i <= 50; i++ ) {
+				bt.setInputFile("/Users/paul/Documents/Imperial/ImperialChallenge/ImperialChallenge" + i + ".txt");
+				bt.set_prior(0.25);
+				bt.train();
+				bt.bayesClassify();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+//		FileProcessor fp = new FileProcessor("/Users/paul/Documents/Imperial/ImperialChallenge1.txt", 4);
+//		fp.printAllNames();
 //		fp.printeFile();
 //		Random generator = new Random();
 //		double mean = 0.5, variance = 0.01;
@@ -59,6 +70,6 @@ public class Main {
 //		}
 //		
 //		LetterNeighbor l = new LetterNeighbor();
-//		l.printStringValues();
+//		System.out.println(HelperFunctions.fileNumber("/Users/paul/Documents/Imperial/ImperialChallenge/ImperialChallenge15.txt"));
 	}
 }

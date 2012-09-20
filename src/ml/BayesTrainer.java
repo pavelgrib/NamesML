@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.TreeMap;
 
 import def.FileProcessor;
@@ -18,7 +19,7 @@ import def.NameItem;
 public class BayesTrainer {
 	
 	private static final String TRAININGPATH = "/Users/" + System.getProperty("user.name") + "/github/local/NamesML/names/";
-	private static final String OUTPUTPATH = "/Users/" + System.getProperty("user.name") + "/github/local/NamesML/results/";
+	private static final String OUTPUTDIR = "/Users/" + System.getProperty("user.name") + "/Documents/Imperial/ImperialChallenge/output/";
 	private String _inputFile;
 	private double _prior;
 	private LetterNeighbor _ln_male;
@@ -30,13 +31,7 @@ public class BayesTrainer {
 		File namesFolder = new File(TRAININGPATH);
 		HashMap<String, File> files = new HashMap<String, File>();
 		for ( File f: namesFolder.listFiles() ) {
-			files.put(f.getName().split(".")[0], f);
-		}
-		
-		try {
-			this.train();
-		} catch (Exception e) {
-			e.printStackTrace();
+			files.put(f.getName().split("\\.")[0], f);
 		}
 	}
 	
@@ -58,58 +53,144 @@ public class BayesTrainer {
 	// classifies everything in the input file according to the LetterNeighbor instance passed in
 	public void bayesClassify() {
 		FileProcessor inputFP = new FileProcessor(_inputFile, 4);
-		LinkedList<String> misspelled = new LinkedList<String>();					// list of misspelled words
-		TreeMap<String,String> corrections = new TreeMap<String,String>();			// map from misspelled word to suggested spellin
+		LinkedList<NameItem> misspelled = new LinkedList<NameItem>();					// list of misspelled words
+		TreeMap<String,String> corrections = new TreeMap<String,String>();			// map from misspelled word to suggested spelling
 		Iterator<NameItem> name_it = inputFP.nameItemIterator();
 		NameItem next;
-		String[] nextName;
 		LetterNeighbor data;
-		char[] charArray, charArraySearch;
-		char[] twochar = new char[2];
-		double[] oneLetterP, twoLetterP, notOneLetterP, notTwoLetterP, prior;
-//		SimpleStats tempSS1 = new SimpleStats(), tempSS2 = new SimpleStats(), tempSS3 = new SimpleStats();
-		double lhoodCorrect = 0, lhoodIncorrect = 0;
+		char[] charArray;
+		double[] p1StrGiven1Str, p1StrGiven2Str, p2StrGiven1Str, p2StrGiven2Str, pNot1StrGiven1Str, pNot1StrGiven2Str, pNot2StrGiven1Str, pNot2StrGiven2Str, p1Prior1, pNot1Prior1;
+		double lhoodCorrectFirst = 0, lhoodIncorrectFirst = 0, lhoodCorrectLast = 0, lhoodIncorrectLast = 0;
 		while ( name_it.hasNext() ) {
 			next = name_it.next();
-			// TODO: need some processing to deal with first and last names leading/trailing symbols, numbers, whitespace
-			
-			nextName = next.get_name().split(" ");
-			
-			charArray = next.get_name().toLowerCase().toCharArray();
-			oneLetterP = new double[charArray.length-1];
-			twoLetterP = new double[charArray.length-2];
-			notOneLetterP = new double[charArray.length-1];
-			notTwoLetterP = new double[charArray.length-2];
-			if ( next.get_gender() == "M" ) {
-				data = _ln_male;
+			if ( next.get_name().length() == 1 || next.initially_misspelled() ) {
+				misspelled.add(next);
 			} else {
-				data = _ln_female;
-			}
-			for ( int i = 0 ; i < charArray.length-1; i++ ) {
-				oneLetterP[i] = data.conditionalProbability( String.valueOf(charArray[i+1]), String.valueOf(charArray[i]) );
-				notOneLetterP[i] = 1 - oneLetterP[i];
-			}
-			
-			for ( int i = 0; i < charArray.length - 2; i++ ) {
-				twochar[0] = charArray[i];
-				twochar[1] = charArray[i+1];
-				twoLetterP[i] = data.conditionalProbability( String.valueOf(charArray[i+2]), String.valueOf(twochar) );
-				notTwoLetterP[i] = 1 - twoLetterP[i];
-			}
-			lhoodCorrect = HelperFunctions.product(oneLetterP) * HelperFunctions.product(twoLetterP);
-			lhoodIncorrect = HelperFunctions.product(notOneLetterP) * HelperFunctions.product(notTwoLetterP);
-			if ( lhoodCorrect > lhoodIncorrect ) {
-				misspelled.add(next.get_name());
-				/* TODO search for corrections: will be any modifications of the word that can increase product above the other one
-				 potential solution: find the smallest probability causing the classification, then find the largest one such that there is proximity between
-				 the current misspelled word and the correct one... need to define notion of proximity between strings
-				*/
-//				tempSS1.add(oneLetterP);
-//				charArray[tempSS1.get_minAtCount()-1];
+				// classifying first name
+				if ( next.get_gender() == "M" ) {
+					data = _ln_male;
+				} else {
+					data = _ln_female;
+				}
+				charArray = next.get_name().toLowerCase().toCharArray();
+				p1StrGiven1Str = new double[charArray.length-1];
+				pNot1StrGiven1Str = new double[charArray.length-1];
+				p1Prior1 = new double[charArray.length - 1];
+				pNot1Prior1 = new double[charArray.length - 1];
+
+				for ( int i = 0 ; i < charArray.length-1; i++ ) {
+					p1StrGiven1Str[i] = data.conditionalProbability( String.valueOf(charArray[i+1]), String.valueOf(charArray[i]) );
+					pNot1StrGiven1Str[i] = 1 - p1StrGiven1Str[i];
+				}
+				lhoodCorrectFirst = (1 - _prior) * HelperFunctions.product(p1StrGiven1Str) * HelperFunctions.product(p1Prior1);
+				lhoodIncorrectFirst = _prior * HelperFunctions.product(pNot1StrGiven1Str) * HelperFunctions.product(pNot1Prior1);
+				
+				if ( charArray.length > 2 ) {
+					p1StrGiven2Str = new double[charArray.length-2];
+					p2StrGiven1Str = new double[charArray.length-2];
+					pNot1StrGiven2Str = new double[charArray.length-2];
+					pNot2StrGiven1Str = new double[charArray.length-2];
+					char[] twochar = new char[2];
+					char[] twochar2 = new char[2];
+					for ( int i = 0; i < charArray.length - 2; i++ ) {
+						twochar[0] = charArray[i];
+						twochar[1] = charArray[i+1];
+						p1StrGiven2Str[i] = data.conditionalProbability( String.valueOf(charArray[i+2]), String.valueOf(twochar) );
+						pNot1StrGiven2Str[i] = 1 - p1StrGiven2Str[i];
+						
+						twochar[0] = charArray[i+1];
+						twochar[1] = charArray[i+2];
+						p2StrGiven1Str[i] = data.conditionalProbability( String.valueOf(charArray[i]), String.valueOf(twochar) );
+						pNot2StrGiven1Str[i] = 1 - p2StrGiven1Str[i];
+					}
+					lhoodCorrectFirst *= HelperFunctions.product(p1StrGiven2Str) * HelperFunctions.product(p1StrGiven2Str);
+					lhoodIncorrectFirst *= HelperFunctions.product(pNot1StrGiven2Str) * HelperFunctions.product(pNot1StrGiven2Str);
+					if ( charArray.length > 3 ) {
+						p2StrGiven2Str = new double[charArray.length-3];
+						pNot2StrGiven2Str = new double[charArray.length-3];
+						for ( int i = 0; i < charArray.length-3; i++ ) {
+							twochar[0] = charArray[i+2];
+							twochar[1] = charArray[i+3];
+							twochar2[0] = charArray[i];
+							twochar2[1] = charArray[i+1];
+							p2StrGiven2Str[i] = data.conditionalProbability( String.valueOf(twochar2), String.valueOf(twochar) );
+							pNot2StrGiven2Str[i] = 1 - p2StrGiven2Str[i];
+						}
+						lhoodCorrectFirst *= HelperFunctions.product(p2StrGiven2Str);
+						lhoodIncorrectFirst *= HelperFunctions.product(pNot2StrGiven2Str);
+					}
+					if ( lhoodCorrectFirst < lhoodIncorrectFirst ) {
+						misspelled.add(next);
+						corrections.put(next.toString(), HelperFunctions.surroundWithQuotes(replacement(p1StrGiven1Str, charArray)) ); 
+					}
+				}
+				
+				// classifying last name
+				charArray = next.get_lastname().toLowerCase().toCharArray();
+				data = _ln_surnames;
+				p1StrGiven1Str = new double[charArray.length-1];
+				pNot1StrGiven1Str = new double[charArray.length-1];
+				p1Prior1 = new double[charArray.length - 1];
+				pNot1Prior1 = new double[charArray.length - 1];
+				
+				for ( int i = 0 ; i < charArray.length-1; i++ ) {
+					p1StrGiven1Str[i] = data.conditionalProbability( String.valueOf(charArray[i+1]), String.valueOf(charArray[i]) );
+					pNot1StrGiven1Str[i] = 1 - p1StrGiven1Str[i];
+				}
+				lhoodCorrectLast = (1 - _prior) * HelperFunctions.product(p1StrGiven1Str) * HelperFunctions.product(p1Prior1);
+				lhoodIncorrectLast = _prior * HelperFunctions.product(pNot1StrGiven1Str) * HelperFunctions.product(pNot1Prior1);
+				
+				if ( charArray.length > 2 ) {
+					p1StrGiven2Str = new double[charArray.length-2];
+					p2StrGiven1Str = new double[charArray.length-2];
+					pNot1StrGiven2Str = new double[charArray.length-2];
+					pNot2StrGiven1Str = new double[charArray.length-2];
+					char[] twochar = new char[2];
+					char[] twochar2 = new char[2];
+					for ( int i = 0; i < charArray.length - 2; i++ ) {
+						twochar[0] = charArray[i];
+						twochar[1] = charArray[i+1];
+						p1StrGiven2Str[i] = data.conditionalProbability( String.valueOf(charArray[i+2]), String.valueOf(twochar) );
+						pNot1StrGiven2Str[i] = 1 - p1StrGiven2Str[i];
+						
+						twochar[0] = charArray[i+1];
+						twochar[1] = charArray[i+2];
+						p2StrGiven1Str[i] = data.conditionalProbability( String.valueOf(charArray[i]), String.valueOf(twochar) );
+						pNot2StrGiven1Str[i] = 1 - p2StrGiven1Str[i];
+					}
+					lhoodCorrectLast *= HelperFunctions.product(p1StrGiven2Str) * HelperFunctions.product(p1StrGiven2Str);
+					lhoodIncorrectLast *= HelperFunctions.product(pNot1StrGiven2Str) * HelperFunctions.product(pNot1StrGiven2Str);
+					if ( charArray.length > 3 ) {
+						p2StrGiven2Str = new double[charArray.length-3];
+						pNot2StrGiven2Str = new double[charArray.length-3];
+						for ( int i = 0; i < charArray.length-3; i++ ) {
+							twochar[0] = charArray[i+2];
+							twochar[1] = charArray[i+3];
+							twochar2[0] = charArray[i];
+							twochar2[1] = charArray[i+1];
+							p2StrGiven2Str[i] = data.conditionalProbability( String.valueOf(twochar2), String.valueOf(twochar) );
+							pNot2StrGiven2Str[i] = 1 - p2StrGiven2Str[i];
+						}
+						lhoodCorrectLast *= HelperFunctions.product(p2StrGiven2Str);
+						lhoodIncorrectLast *= HelperFunctions.product(pNot2StrGiven2Str);
+					}
+				}
+				if ( lhoodCorrectLast < lhoodIncorrectLast ) {
+					misspelled.add(next);
+					corrections.put(next.toString(), HelperFunctions.surroundWithQuotes(replacement(p1StrGiven1Str, charArray)) ); 
+				}
 			}
 		}
-
-
-		HelperFunctions.writeListToFile(misspelled, OUTPUTPATH + "CandidateOutput1.txt");
+		HelperFunctions.writeListToFile(misspelled, OUTPUTDIR + "CandidateOutput1_" + HelperFunctions.fileNumber(_inputFile) + ".txt");
+		HelperFunctions.writeMapToFile(corrections, OUTPUTDIR + "CandidateOutput2_" + HelperFunctions.fileNumber(_inputFile) + ".txt");
+	}
+	
+	private String replacement(double[] pArray, char[] charArray) {
+		int minIdx1 = HelperFunctions.minAt(pArray);
+		char[] replacement = charArray;
+		List<String> exclude = new LinkedList<String>();
+		char c = _ln_surnames.likeliestFollowing(String.valueOf(charArray[minIdx1]), 1, exclude).charAt(0);
+		replacement[minIdx1] = c;
+		return String.valueOf(replacement);
 	}
 }
